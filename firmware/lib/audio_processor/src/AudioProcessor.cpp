@@ -23,7 +23,7 @@ AudioProcessor::AudioProcessor(int audio_length, int window_size, int step_size,
     m_energy = static_cast<float *>(malloc(sizeof(float) * m_energy_size));
     // work out the pooled energy size
     m_pooled_energy_size = ceilf((float)m_energy_size / (float)pooling_size);
-    printf("m_pooled_energy_size=%d\n", m_pooled_energy_size);
+    printf("AudioProcessor() - m_pooled_energy_size=%d\n", m_pooled_energy_size);
     // initialise kiss fftr
     m_cfg = kiss_fftr_alloc(m_fft_size, false, 0, 0);
     // initialise the hamming window

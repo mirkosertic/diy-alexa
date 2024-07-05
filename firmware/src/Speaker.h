@@ -1,28 +1,32 @@
 #ifndef _speaker_h_
 #define _speaker_h_
 
-class I2SOutput;
-class WAVFileReader;
+#include "SPIFFS.h"
+#include "AudioTools.h"
 
 class Speaker
 {
 private:
-    WAVFileReader *m_ok;
-    WAVFileReader *m_cantdo;
-    WAVFileReader *m_ready_ping;
-    WAVFileReader *m_life;
-    WAVFileReader *m_jokes[5];
+    File m_ok;
+    File m_ready_ping;
 
-    I2SOutput *m_i2s_output;
+    URLStream *m_url;
+    AudioStream *m_output;
+    EncodedAudioStream *m_wavout;
+    EncodedAudioStream *m_mp3out;
+    StreamCopy *m_copier;
 
 public:
-    Speaker(I2SOutput *i2s_output);
+    Speaker(AudioStream *output, AudioInfo info);
     ~Speaker();
     void playOK();
     void playReady();
-    void playCantDo();
-    void playRandomJoke();
-    void playLife();
+
+    bool playAudioFromURL(const char* url);
+
+    void loop();
+
+    bool finished();
 };
 
 #endif

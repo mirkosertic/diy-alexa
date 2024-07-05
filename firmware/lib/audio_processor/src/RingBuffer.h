@@ -11,6 +11,11 @@ public:
     int16_t samples[SAMPLE_BUFFER_SIZE];
     AudioBuffer()
     {
+        wipe();
+    }
+
+    void wipe() 
+    {
         memset(samples, 0, SAMPLE_BUFFER_SIZE * sizeof(int16_t));
     }
 };

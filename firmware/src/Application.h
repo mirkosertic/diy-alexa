@@ -1,26 +1,32 @@
 #ifndef _application_h_
 #define _applicaiton_h_
 
-#include "state_machine/States.h"
-
-class I2SSampler;
-class I2SOutput;
-class State;
-class IndicatorLight;
-class Speaker;
-class IntentProcessor;
+#include "Recorder.h"
+#include "Speaker.h"
+#include "IndicatorLight.h"
+#include "Homeassistant.h"
+#include "state_machine/State.h"
 
 class Application
 {
 private:
-    State *m_detect_wake_word_state;
-    State *m_recognise_command_state;
     State *m_current_state;
-
+    Recorder *m_recorder;
+    Speaker *m_speaker;
+    Homeassistant *m_homeassistant;
+    IndicatorLight *m_indicatorLight;
+    TaskHandle_t m_taskHandle;
 public:
-    Application(I2SSampler *sample_provider, IntentProcessor *intent_processor, Speaker *speaker, IndicatorLight *indicator_light);
+    Application(Recorder *recorder, Speaker *speaker, IndicatorLight *indicator_light, Homeassistant *homeassistant, State *initialState);
     ~Application();
+
+    void start();
+
+    void loop();
+
     void run();
+
+    TaskHandle_t *getTaskHandle();
 };
 
 #endif

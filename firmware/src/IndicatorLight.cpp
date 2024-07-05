@@ -42,6 +42,10 @@ void indicatorLedTask(void *param)
 
 IndicatorLight::IndicatorLight()
 {
+}
+
+void IndicatorLight::start()
+{
     // use the build in LED as an indicator - we'll set it up as a pwm output so we can make it glow nicely
     ledcSetup(0, 10000, 8);
     ledcAttachPin(2, 0);

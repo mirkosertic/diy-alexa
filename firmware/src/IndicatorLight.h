@@ -18,6 +18,8 @@ public:
     IndicatorLight();
     void setState(IndicatorState state);
     IndicatorState getState();
+
+    void start();
 };
 
 #endif

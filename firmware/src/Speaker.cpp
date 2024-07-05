@@ -1,60 +1,76 @@
 #include "Speaker.h"
-#include "I2SOutput.h"
-#include "WAVFileReader.h"
 
-Speaker::Speaker(I2SOutput *i2s_output)
+#include "AudioCodecs/CodecMP3Helix.h"
+//#include <HTTPClient.h>
+
+Speaker::Speaker(AudioStream *output, AudioInfo info)
 {
-    m_i2s_output = i2s_output;
-    m_ok = new WAVFileReader("/ok.wav");
-    m_ready_ping = new WAVFileReader("/ready_ping.wav");
-    m_cantdo = new WAVFileReader("/cantdo.wav");
-    m_life = new WAVFileReader("/life.wav");
-    m_jokes[0] = new WAVFileReader("/joke0.wav");
-    m_jokes[1] = new WAVFileReader("/joke1.wav");
-    m_jokes[2] = new WAVFileReader("/joke2.wav");
-    m_jokes[3] = new WAVFileReader("/joke3.wav");
-    m_jokes[4] = new WAVFileReader("/joke4.wav");
+    m_output = output;
+    m_url = new URLStream();
+    //m_url->addRequestHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIxMjA0ZmJmMGY5NTk0MWI5YmU3MGQ0YjVmMzk5YzRmZiIsImlhdCI6MTcxOTQyNjM3NywiZXhwIjoyMDM0Nzg2Mzc3fQ.Rg2tQuuEstv9HG80iqiHnUr3KmrQGvtOJWQb1qQ28M0");
+
+    m_ok = SPIFFS.open("/ok.wav", "r");
+    m_ready_ping = SPIFFS.open("/ready_ping.wav", "r");
+
+    m_wavout = new EncodedAudioStream(m_output, new WAVDecoder());
+    m_mp3out = new EncodedAudioStream(m_output, new MP3DecoderHelix());
+    
+    m_copier = new StreamCopy();
+
+    m_wavout->begin(info);
+    m_mp3out->begin(info);
 }
 
 Speaker::~Speaker()
 {
-    delete m_ok;
-    delete m_ready_ping;
-    delete m_cantdo;
-    delete m_life;
-    delete m_jokes[0];
-    delete m_jokes[1];
-    delete m_jokes[2];
-    delete m_jokes[3];
-    delete m_jokes[4];
+    delete m_copier;
+    delete m_wavout;
+    delete m_mp3out;
 }
 
 void Speaker::playOK()
 {
-    m_ok->reset();
-    m_i2s_output->setSampleGenerator(m_ok);
+    m_ok.seek(0);
+    m_copier->begin(*m_wavout, m_ok);
+}
+
+bool Speaker::playAudioFromURL(const char* url)
+{  
+    Serial.printf("playAudioFromURL() - Downloading data from %s\n", url);
+    /*HTTPClient client;
+    client.addHeader("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiIxMjA0ZmJmMGY5NTk0MWI5YmU3MGQ0YjVmMzk5YzRmZiIsImlhdCI6MTcxOTQyNjM3NywiZXhwIjoyMDM0Nzg2Mzc3fQ.Rg2tQuuEstv9HG80iqiHnUr3KmrQGvtOJWQb1qQ28M0");
+    if (client.begin(url))
+    {
+        int responseCode = client.GET();
+        Serial.printf("playAudioFromURL() - Response code is: %u\n", responseCode);    
+        if (responseCode == 200) {
+        }
+    }
+    else {
+        Serial.printf("playAudioFromURL() - Connection failed\n");            
+    }*/
+    //if (m_url->begin("http://stream.srg-ssr.ch/m/rsj/mp3_128", "*/*"))
+    if (m_url->begin(url, "*/*"))
+    {
+        Serial.printf("playAudioFromURL() - Started\n");
+        m_copier->begin(*m_mp3out, *m_url);
+        return true;
+    }
+    return false;
 }
 
 void Speaker::playReady()
 {
-    m_ready_ping->reset();
-    m_i2s_output->setSampleGenerator(m_ready_ping);
+    m_ready_ping.seek(0);
+    m_copier->begin(*m_wavout, m_ready_ping);
 }
 
-void Speaker::playCantDo()
+bool Speaker::finished()
 {
-    m_cantdo->reset();
-    m_i2s_output->setSampleGenerator(m_cantdo);
+    return m_copier->available() == 0;
 }
 
-void Speaker::playRandomJoke()
+void Speaker::loop()
 {
-    int joke = random(5);
-    m_i2s_output->setSampleGenerator(m_jokes[joke]);
-}
-
-void Speaker::playLife()
-{
-    m_life->reset();
-    m_i2s_output->setSampleGenerator(m_life);
+    m_copier->copy();
 }
